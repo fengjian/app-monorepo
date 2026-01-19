@@ -65,8 +65,8 @@ export function MDHeader({
       tabRoute === ETabRoutes.Home ||
       tabRoute === ETabRoutes.Discovery ||
       tabRoute === ETabRoutes.Earn ||
-      tabRoute === ETabRoutes.Perp ||
-      tabRoute === ETabRoutes.DeviceManagement
+      tabRoute === ETabRoutes.DeviceManagement ||
+      tabRoute === ETabRoutes.Settings
     );
   }, [tabRoute]);
   return (

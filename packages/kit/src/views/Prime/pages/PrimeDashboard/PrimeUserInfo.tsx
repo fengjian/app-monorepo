@@ -5,9 +5,7 @@ import { StyleSheet } from 'react-native';
 
 import { Badge, Dialog, Icon, SizableText, XStack } from '@onekeyhq/components';
 import { useOneKeyAuth } from '@onekeyhq/kit/src/components/OneKeyAuth/useOneKeyAuth';
-import useAppNavigation from '@onekeyhq/kit/src/hooks/useAppNavigation';
 import { ETranslations } from '@onekeyhq/shared/src/locale';
-import { EAppUpdateRoutes, EModalRoutes } from '@onekeyhq/shared/src/routes';
 
 // import { usePrimeAuthV2 } from '../../hooks/usePrimeAuthV2';
 
@@ -16,7 +14,6 @@ import { PrimeUserInfoMoreButton } from './PrimeUserInfoMoreButton';
 export function PrimeUserBadge() {
   const intl = useIntl();
   const { user } = useOneKeyAuth();
-  const navigation = useAppNavigation();
 
   const isPrime = user?.primeSubscription?.isActive;
   if (!isPrime) return null;
@@ -38,14 +35,6 @@ export function PrimeUserBadge() {
               },
             ),
             onConfirmText: intl.formatMessage({
-              id: ETranslations.update_update_now,
-            }),
-            onConfirm: () => {
-              navigation.pushModal(EModalRoutes.AppUpdateModal, {
-                screen: EAppUpdateRoutes.UpdatePreview,
-              });
-            },
-            onCancelText: intl.formatMessage({
               id: ETranslations.global_got_it,
             }),
           });

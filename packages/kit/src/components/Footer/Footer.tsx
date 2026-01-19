@@ -4,8 +4,6 @@ import { useIntl } from 'react-intl';
 
 import { Image, XStack, useOnRouterChange } from '@onekeyhq/components';
 import { ETranslations } from '@onekeyhq/shared/src/locale';
-import { showIntercom } from '@onekeyhq/shared/src/modules3rdParty/intercom';
-import platformEnv from '@onekeyhq/shared/src/platformEnv';
 import { ERootRoutes, ETabRoutes } from '@onekeyhq/shared/src/routes';
 
 import { usePerpsLogo } from '../../views/Perp/hooks/usePerpsLogo';
@@ -27,19 +25,11 @@ const getLinks = () => [
     translationKey: ETranslations.menu_help,
     href: 'https://help.onekey.so/collections/15988402',
   },
-  platformEnv.isWebDappMode
-    ? {
-        id: 'contact',
-        translationKey: ETranslations.settings_contact_us,
-        onPress: () => {
-          void showIntercom();
-        },
-      }
-    : {
-        id: 'guide',
-        translationKey: ETranslations.global_view_tutorial,
-        href: 'https://help.onekey.so/articles/12568192',
-      },
+  {
+    id: 'guide',
+    translationKey: ETranslations.global_view_tutorial,
+    href: 'https://help.onekey.so/articles/12568192',
+  },
   {
     id: 'terms',
     translationKey: ETranslations.settings_user_agreement,

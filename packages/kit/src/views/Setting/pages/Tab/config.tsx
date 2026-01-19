@@ -12,12 +12,7 @@ import type {
 import { Dialog } from '@onekeyhq/components';
 import backgroundApiProxy from '@onekeyhq/kit/src/background/instance/backgroundApiProxy';
 import { useKeylessWalletExistsLocal } from '@onekeyhq/kit/src/components/KeylessWallet/useKeylessWallet';
-import { useOneKeyAuth } from '@onekeyhq/kit/src/components/OneKeyAuth/useOneKeyAuth';
 import PasswordUpdateContainer from '@onekeyhq/kit/src/components/Password/container/PasswordUpdateContainer';
-import {
-  isShowAppUpdateUIWhenUpdating,
-  useAppUpdateInfo,
-} from '@onekeyhq/kit/src/components/UpdateReminder/hooks';
 import type useAppNavigation from '@onekeyhq/kit/src/hooks/useAppNavigation';
 import { useBiometricAuthInfo } from '@onekeyhq/kit/src/hooks/useBiometricAuthInfo';
 import { useHelpLink } from '@onekeyhq/kit/src/hooks/useHelpLink';
@@ -38,7 +33,6 @@ import {
 } from '@onekeyhq/shared/src/config/appConfig';
 import { ETranslations } from '@onekeyhq/shared/src/locale';
 import { defaultLogger } from '@onekeyhq/shared/src/logger/logger';
-import { showIntercom } from '@onekeyhq/shared/src/modules3rdParty/intercom';
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
 import {
   EDAppConnectionModal,
@@ -48,14 +42,13 @@ import {
   EModalSettingRoutes,
 } from '@onekeyhq/shared/src/routes';
 import { EManualBackupRoutes } from '@onekeyhq/shared/src/routes/manualBackup';
-import { EPrimeFeatures, EPrimePages } from '@onekeyhq/shared/src/routes/prime';
+import { EPrimePages } from '@onekeyhq/shared/src/routes/prime';
 import { EModalShortcutsRoutes } from '@onekeyhq/shared/src/routes/shortcuts';
 import { openUrlExternal } from '@onekeyhq/shared/src/utils/openUrlUtils';
 import { EHardwareTransportType } from '@onekeyhq/shared/types';
 import { EReasonForNeedPassword } from '@onekeyhq/shared/types/setting';
 
 import { useCloudBackup } from '../../../Onboardingv2/hooks/useCloudBackup';
-import { usePrimeAvailable } from '../../../Prime/hooks/usePrimeAvailable';
 
 import {
   AutoLockListItem,
@@ -129,13 +122,6 @@ export type ISettingsConfig = (
   | undefined
 )[];
 export const useSettingsConfig: () => ISettingsConfig = () => {
-  const appUpdateInfo = useAppUpdateInfo();
-  const isShowAppUpdateUI = useMemo(() => {
-    return isShowAppUpdateUIWhenUpdating({
-      updateStrategy: appUpdateInfo.data.updateStrategy,
-      updateStatus: appUpdateInfo.data.status,
-    });
-  }, [appUpdateInfo.data.updateStrategy, appUpdateInfo.data.status]);
   const intl = useIntl();
   const onPressAddressBook = useShowAddressBook({
     useNewModal: false,
@@ -149,8 +135,6 @@ export const useSettingsConfig: () => ISettingsConfig = () => {
   const privacyPolicyUrl = useHelpLink({ path: 'articles/11461298' });
   const helpCenterUrl = useHelpLink({ path: '' });
   const [devSettings] = useDevSettingsPersistAtom();
-  const { isPrimeAvailable } = usePrimeAvailable();
-  const { isLoggedIn } = useOneKeyAuth();
   const [{ perpConfigCommon }] = usePerpsCommonConfigPersistAtom();
   const [settings] = useSettingsPersistAtom();
 
@@ -191,25 +175,18 @@ export const useSettingsConfig: () => ISettingsConfig = () => {
                       },
                     }
                   : null,
-                isPrimeAvailable
-                  ? {
-                      // OneKey Cloud
-                      icon: 'CloudOutline',
-                      title: intl.formatMessage({
-                        id: ETranslations.global_onekey_cloud,
-                      }),
-                      onPress: (navigation) => {
-                        defaultLogger.prime.subscription.primeEntryClick({
-                          featureName: EPrimeFeatures.OneKeyCloud,
-                          entryPoint: 'settingsPage',
-                        });
-
-                        navigation?.pushModal(EModalRoutes.PrimeModal, {
-                          screen: EPrimePages.PrimeCloudSync,
-                        });
-                      },
-                    }
-                  : undefined,
+                {
+                  // OneKey Cloud
+                  icon: 'CloudOutline',
+                  title: intl.formatMessage({
+                    id: ETranslations.global_onekey_cloud,
+                  }),
+                  onPress: (navigation) => {
+                    navigation?.pushModal(EModalRoutes.PrimeModal, {
+                      screen: EPrimePages.PrimeCloudSync,
+                    });
+                  },
+                },
               ],
               [
                 !platformEnv.isWebDappMode
@@ -566,21 +543,6 @@ export const useSettingsConfig: () => ISettingsConfig = () => {
               : undefined,
           ],
           [
-            isLoggedIn
-              ? {
-                  icon: 'RemovePeopleOutline',
-                  title: intl.formatMessage({
-                    id: ETranslations.id_delete_onekey_id,
-                  }),
-                  onPress: (navigation) => {
-                    navigation?.pushModal(EModalRoutes.PrimeModal, {
-                      screen: EPrimePages.PrimeDeleteAccount,
-                    });
-                  },
-                }
-              : null,
-          ],
-          [
             {
               icon: 'BroomOutline',
               title: intl.formatMessage({
@@ -671,15 +633,12 @@ export const useSettingsConfig: () => ISettingsConfig = () => {
         title: intl.formatMessage({
           id: ETranslations.global_about,
         }),
-        showDot: isShowAppUpdateUI && !!appUpdateInfo.isNeedUpdate,
         configs: [
           [
             {
               icon: 'InfoCircleOutline',
               title: intl.formatMessage({
-                id: appUpdateInfo.isNeedUpdate
-                  ? ETranslations.settings_app_update_available
-                  : ETranslations.settings_whats_new,
+                id: ETranslations.settings_version_versionnum,
               }),
               renderElement: <ListVersionItem />,
             },
@@ -690,15 +649,6 @@ export const useSettingsConfig: () => ISettingsConfig = () => {
               }),
               onPress: () => {
                 openUrlExternal(helpCenterUrl);
-              },
-            },
-            {
-              icon: 'HelpSupportOutline',
-              title: intl.formatMessage({
-                id: ETranslations.global_contact_us,
-              }),
-              onPress: () => {
-                void showIntercom();
               },
             },
             platformEnv.isExtension ||
@@ -825,7 +775,6 @@ export const useSettingsConfig: () => ISettingsConfig = () => {
       cloudBackupFeatureInfo?.supportCloudBackup,
       cloudBackupFeatureInfo?.icon,
       cloudBackupFeatureInfo?.title,
-      isPrimeAvailable,
       perpConfigCommon.disablePerp,
       perpConfigCommon.usePerpWeb,
       isPasswordSet,
@@ -833,7 +782,6 @@ export const useSettingsConfig: () => ISettingsConfig = () => {
       webAuthIsSupport,
       biometricAuthInfo.title,
       biometricAuthInfo.icon,
-      isLoggedIn,
       settings.hardwareTransportType,
       isShowAppUpdateUI,
       appUpdateInfo.isNeedUpdate,

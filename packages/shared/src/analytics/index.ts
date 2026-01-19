@@ -97,6 +97,9 @@ export class Analytics {
   }
 
   trackEvent(eventName: string, eventProps?: Record<string, any>) {
+    void eventName;
+    void eventProps;
+    return;
     if (eventProps?.pageName) {
       this.basicInfo.pageName = eventProps.pageName;
     }
@@ -182,6 +185,8 @@ export class Analytics {
     appWalletCount?: number;
     hwWalletCount?: number;
   }) {
+    void attributes;
+    return;
     if (this.instanceId && this.baseURL) {
       void this.requestUserProfile(attributes);
     } else {

@@ -10,6 +10,7 @@ import type { ITabDeviceManagementParamList } from './tabDeviceManagement';
 import type { ITabEarnParamList } from './tabEarn';
 import type { ITabMarketParamList } from './tabMarket';
 import type { ITabReferFriendsParamList } from './tabReferFriends';
+import type { ITabSettingsParamList } from './tabSettings';
 
 export enum ETabRoutes {
   Home = 'Home',
@@ -23,6 +24,7 @@ export enum ETabRoutes {
   MultiTabBrowser = 'MultiTabBrowser',
   DeviceManagement = 'DeviceManagement',
   ReferFriends = 'ReferFriends',
+  Settings = 'Settings',
 }
 
 export type ITabStackParamList = {
@@ -37,4 +39,5 @@ export type ITabStackParamList = {
   [ETabRoutes.MultiTabBrowser]: IMultiTabBrowserParamList;
   [ETabRoutes.DeviceManagement]: ITabDeviceManagementParamList;
   [ETabRoutes.ReferFriends]: ITabReferFriendsParamList;
+  [ETabRoutes.Settings]: ITabSettingsParamList;
 };

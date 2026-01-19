@@ -6,7 +6,7 @@ import { useIntl } from 'react-intl';
 import type { IYStackProps } from '@onekeyhq/components';
 import { Button, Icon, XStack, YStack } from '@onekeyhq/components';
 import backgroundApiProxy from '@onekeyhq/kit/src/background/instance/backgroundApiProxy';
-import useAppNavigation from '@onekeyhq/kit/src/hooks/useAppNavigation';
+import { useReceiveToken } from '@onekeyhq/kit/src/hooks/useReceiveToken';
 import { usePromiseResult } from '@onekeyhq/kit/src/hooks/usePromiseResult';
 import { useThemeVariant } from '@onekeyhq/kit/src/hooks/useThemeVariant';
 import {
@@ -19,8 +19,12 @@ import {
   appEventBus,
 } from '@onekeyhq/shared/src/eventBus/appEventBus';
 import { ETranslations } from '@onekeyhq/shared/src/locale';
-import { EModalReceiveRoutes, EModalRoutes } from '@onekeyhq/shared/src/routes';
 import accountUtils from '@onekeyhq/shared/src/utils/accountUtils';
+import {
+  useAllTokenListAtom,
+  useAllTokenListMapAtom,
+  useTokenListStateAtom,
+} from '@onekeyhq/kit/src/states/jotai/contexts/tokenList';
 
 import MainInfoBlock from '../NotBakcedUp/MainBlock';
 
@@ -35,15 +39,31 @@ function ReceiveInfo({
   containerProps?: IYStackProps;
   setShowReceiveInfo?: (show: boolean) => void;
 }) {
-  const navigation = useAppNavigation();
   const themeVariant = useThemeVariant();
   const { updateWalletStatus } = useAccountOverviewActions().current;
   const [walletStatus] = useWalletStatusAtom();
   const intl = useIntl();
 
   const {
-    activeAccount: { wallet },
+    activeAccount: { wallet, account, network, deriveInfoItems, indexedAccount },
   } = useActiveAccount({ num: 0 });
+  const [allTokens] = useAllTokenListAtom();
+  const [map] = useAllTokenListMapAtom();
+  const [tokenListState] = useTokenListStateAtom();
+
+  const { handleOnReceive } = useReceiveToken({
+    accountId: account?.id ?? '',
+    networkId: network?.id ?? '',
+    walletId: wallet?.id ?? '',
+    indexedAccountId: indexedAccount?.id ?? '',
+    tokens: {
+      data: allTokens.tokens,
+      keys: allTokens.keys,
+      map,
+    },
+    tokenListState,
+    isMultipleDerive: deriveInfoItems.length > 1,
+  });
 
   const { run: refreshShouldShowReceiveInfo } = usePromiseResult(async () => {
     let shouldShowReceiveInfo = false;
@@ -69,10 +89,10 @@ function ReceiveInfo({
   }, [wallet?.id, wallet?.xfp, updateWalletStatus]);
 
   const handleAddMoney = useCallback(async () => {
-    navigation.pushModal(EModalRoutes.ReceiveModal, {
-      screen: EModalReceiveRoutes.ReceiveSelector,
+    void handleOnReceive({
+      withAllAggregateTokens: network?.isAllNetworks,
     });
-  }, [navigation]);
+  }, [handleOnReceive, network?.isAllNetworks]);
 
   const handleClose = useCallback(async () => {
     if (!closable) return;

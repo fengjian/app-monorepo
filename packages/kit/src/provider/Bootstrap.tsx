@@ -23,17 +23,11 @@ import {
   useOnboardingConnectWalletLoadingAtom,
 } from '@onekeyhq/kit-bg/src/states/jotai/atoms';
 import {
-  EAppUpdateStatus,
-  EUpdateFileType,
-  getUpdateFileType,
-} from '@onekeyhq/shared/src/appUpdate';
-import {
   EAppEventBusNames,
   appEventBus,
 } from '@onekeyhq/shared/src/eventBus/appEventBus';
 import { ETranslations } from '@onekeyhq/shared/src/locale';
 import { defaultLogger } from '@onekeyhq/shared/src/logger/logger';
-import { electronUpdateListeners } from '@onekeyhq/shared/src/modules3rdParty/auto-update/electronUpdateListeners';
 import { initIntercom } from '@onekeyhq/shared/src/modules3rdParty/intercom';
 import performance from '@onekeyhq/shared/src/performance';
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
@@ -56,7 +50,6 @@ import { EShortcutEvents } from '@onekeyhq/shared/src/shortcuts/shortcuts.enum';
 import { ESpotlightTour } from '@onekeyhq/shared/src/spotlight';
 
 import backgroundApiProxy from '../background/instance/backgroundApiProxy';
-import { useAppUpdateInfo } from '../components/UpdateReminder/hooks';
 import useAppNavigation from '../hooks/useAppNavigation';
 import { useOnLock } from '../hooks/useOnLock';
 import { useRunAfterTokensDone } from '../hooks/useRunAfterTokensDone';
@@ -67,10 +60,6 @@ const useOnLockCallback = platformEnv.isDesktop
   ? useOnLock
   : () => () => undefined;
 
-const useAppUpdateInfoCallback = platformEnv.isDesktop
-  ? useAppUpdateInfo
-  : () => ({} as ReturnType<typeof useAppUpdateInfo>);
-
 const useDesktopEvents = platformEnv.isDesktop
   ? () => {
       const formInstances = getFormInstances();
@@ -80,45 +69,6 @@ const useDesktopEvents = platformEnv.isDesktop
       const onLock = useOnLockCallback();
       const useOnLockRef = useRef(onLock);
       useOnLockRef.current = onLock;
-
-      const { checkForUpdates, onUpdateAction } = useAppUpdateInfoCallback(
-        false,
-        false,
-      );
-      const isCheckingUpdate = useRef(false);
-
-      const onCheckUpdate = useCallback(async () => {
-        defaultLogger.update.app.log('checkForUpdates');
-        if (isCheckingUpdate.current) {
-          return;
-        }
-        isCheckingUpdate.current = true;
-        const { isNeedUpdate, response } = await checkForUpdates();
-        if (isNeedUpdate || response === undefined) {
-          onUpdateAction();
-          isCheckingUpdate.current = false;
-        } else {
-          Dialog.confirm({
-            title: intl.formatMessage({
-              id: ETranslations.update_app_update_latest_version,
-            }),
-            tone: 'success',
-            icon: 'Ai3StarSolid',
-            description: intl.formatMessage({
-              id: ETranslations.update_app_up_to_date,
-            }),
-            onClose: () => {
-              isCheckingUpdate.current = false;
-            },
-            onConfirmText: intl.formatMessage({
-              id: ETranslations.global_ok,
-            }),
-          });
-        }
-      }, [checkForUpdates, intl, onUpdateAction]);
-
-      const onCheckUpdateRef = useRef(onCheckUpdate);
-      onCheckUpdateRef.current = onCheckUpdate;
 
       const openSettings = useCallback(
         (isMainWindowVisible: boolean) => {
@@ -474,68 +424,17 @@ export const useLaunchEvents = (): void => {
     if (isLocked || hasLaunchEventsExecutedRef.current) {
       return;
     }
-    void backgroundApiProxy.serviceAppUpdate
-      .getUpdateStatus()
-      .then((updateStatus: EAppUpdateStatus) => {
-        if (updateStatus === EAppUpdateStatus.ready) {
-          return;
-        }
-        hasLaunchEventsExecutedRef.current = true;
-        setTimeout(async () => {
-          await backgroundApiProxy.serviceApp.updateLaunchTimes();
-          if (platformEnv.isExtension) {
-            await launchFloatingIconEvent(intl);
-          }
-        }, 250);
-      });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLocked]);
+    hasLaunchEventsExecutedRef.current = true;
+    setTimeout(async () => {
+      await backgroundApiProxy.serviceApp.updateLaunchTimes();
+      if (platformEnv.isExtension) {
+        await launchFloatingIconEvent(intl);
+      }
+    }, 250);
+  }, [isLocked, intl]);
 };
 
-const getBuilderNumber = (builderNumber?: string) => {
-  return builderNumber ? Number(builderNumber.split('-')[0]) : -1;
-};
-export const useCheckUpdateOnDesktop =
-  platformEnv.isDesktop && !platformEnv.isDesktopStore
-    ? () => {
-        useEffect(() => {
-          const subscription = electronUpdateListeners.onDownloadedFileEvent?.(
-            (downloadUrl) => {
-              void backgroundApiProxy.serviceAppUpdate.updateDownloadUrl(
-                downloadUrl,
-              );
-            },
-          );
-          setTimeout(async () => {
-            const updateInfo =
-              await backgroundApiProxy.serviceAppUpdate.getUpdateInfo();
-            const fileType = getUpdateFileType(updateInfo);
-            if (
-              updateInfo.status === EAppUpdateStatus.done ||
-              fileType === EUpdateFileType.appShell
-            ) {
-              return;
-            }
-            const previousBuildNumber =
-              await globalThis.desktopApiProxy.appUpdate.getPreviousUpdateBuildNumber();
-            defaultLogger.app.appUpdate.isInstallFailed(
-              previousBuildNumber,
-              platformEnv.buildNumber || '',
-            );
-            if (
-              previousBuildNumber &&
-              getBuilderNumber(previousBuildNumber) >=
-                getBuilderNumber(platformEnv.buildNumber)
-            ) {
-              void backgroundApiProxy.serviceAppUpdate.resetToManualInstall();
-            }
-          }, 0);
-          return () => {
-            subscription?.();
-          };
-        }, []);
-      }
-    : noop;
+export const useCheckUpdateOnDesktop = noop;
 
 export const useClearStorageOnExtension = platformEnv.isExtension
   ? () => {

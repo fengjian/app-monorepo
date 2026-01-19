@@ -32,21 +32,15 @@ import backgroundApiProxy from '@onekeyhq/kit/src/background/instance/background
 import { UniversalContainerWithSuspense } from '@onekeyhq/kit/src/components/BiologyAuthComponent/container/UniversalContainer';
 import { useKeylessWallet } from '@onekeyhq/kit/src/components/KeylessWallet/useKeylessWallet';
 import { ListItem } from '@onekeyhq/kit/src/components/ListItem';
-import {
-  isShowAppUpdateUIWhenUpdating,
-  useAppUpdateInfo,
-} from '@onekeyhq/kit/src/components/UpdateReminder/hooks';
 import useAppNavigation from '@onekeyhq/kit/src/hooks/useAppNavigation';
 import { TabFreezeOnBlurContext } from '@onekeyhq/kit/src/provider/Container/TabFreezeOnBlurContainer';
 import {
-  useAppUpdatePersistAtom,
   usePasswordBiologyAuthInfoAtom,
   usePasswordPersistAtom,
   usePasswordWebAuthInfoAtom,
   useSettingsPersistAtom,
 } from '@onekeyhq/kit-bg/src/states/jotai/atoms';
 import { useDevSettingsPersistAtom } from '@onekeyhq/kit-bg/src/states/jotai/atoms/devSettings';
-import { displayAppUpdateVersion } from '@onekeyhq/shared/src/appUpdate';
 import {
   GITHUB_URL,
   ONEKEY_URL,
@@ -60,7 +54,6 @@ import {
 import { ETranslations } from '@onekeyhq/shared/src/locale';
 import { defaultLogger } from '@onekeyhq/shared/src/logger/logger';
 import type { IFuseResultMatch } from '@onekeyhq/shared/src/modules3rdParty/fuse';
-import { showIntercom } from '@onekeyhq/shared/src/modules3rdParty/intercom';
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
 import type { IModalSettingParamList } from '@onekeyhq/shared/src/routes';
 import { EModalSettingRoutes, ERootRoutes } from '@onekeyhq/shared/src/routes';
@@ -385,40 +378,8 @@ export function HardwareTransportTypeListItem(props: ICustomElementProps) {
 }
 
 export function ListVersionItem(props: ICustomElementProps) {
-  const { iconProps, titleProps } = props;
-  const appUpdateInfo = useAppUpdateInfo();
-  const handleToUpdatePreviewPage = useCallback(() => {
-    appUpdateInfo.toUpdatePreviewPage();
-  }, [appUpdateInfo]);
-  const isShowAppUpdateUI = useMemo(() => {
-    return isShowAppUpdateUIWhenUpdating({
-      updateStrategy: appUpdateInfo.data.updateStrategy,
-      updateStatus: appUpdateInfo.data.status,
-    });
-  }, [appUpdateInfo.data.updateStrategy, appUpdateInfo.data.status]);
-  return isShowAppUpdateUI && appUpdateInfo.isNeedUpdate ? (
-    <TabSettingsListItem
-      {...props}
-      onPress={handleToUpdatePreviewPage}
-      iconProps={{ ...iconProps, color: '$textInfo' }}
-      titleProps={{ ...titleProps, color: '$textInfo' }}
-      drillIn
-    >
-      <ListItem.Text
-        primary={
-          <Badge badgeType="info" badgeSize="lg">
-            {displayAppUpdateVersion(appUpdateInfo.data)}
-          </Badge>
-        }
-        align="right"
-      />
-    </TabSettingsListItem>
-  ) : (
-    <TabSettingsListItem
-      {...props}
-      onPress={appUpdateInfo.onViewReleaseInfo}
-      drillIn
-    >
+  return (
+    <TabSettingsListItem {...props} drillIn={false}>
       <ListItem.Text
         primaryTextProps={props?.titleProps}
         primary={platformEnv.version}
@@ -493,40 +454,10 @@ function SocialButton({
   );
 }
 
-// Special Support Button component that uses showIntercom
-function SupportButton({ text }: { text: string }) {
-  const isTabNavigator = useIsTabNavigator();
-  const buttonSize = isTabNavigator ? undefined : '$14';
-  const size = isTabNavigator ? '$5' : '$6';
-  const onPress = useCallback(() => {
-    // Then show intercom support
-    void showIntercom();
-  }, []);
-
-  return (
-    <Tooltip
-      renderTrigger={
-        <IconButton
-          bg="$bgSubdued"
-          w={buttonSize}
-          h={buttonSize}
-          iconSize={size as IIconProps['size']}
-          icon="HelpSupportOutline"
-          borderRadius="$full"
-          onPress={onPress}
-        />
-      }
-      renderContent={text}
-      placement="top"
-    />
-  );
-}
-
 export function SocialButtonGroup() {
   const intl = useIntl();
   const { copyText } = useClipboard();
   const [{ locale }] = useSettingsPersistAtom();
-  const [appUpdateInfo] = useAppUpdatePersistAtom();
   const isTabNavigator = useIsTabNavigator();
   const version = useMemo(() => {
     return `${platformEnv.version ?? ''} ${platformEnv.buildNumber ?? ''}`;
@@ -550,18 +481,6 @@ export function SocialButtonGroup() {
   }, [copyText, versionString]);
   const textSize = isTabNavigator ? '$bodySmMedium' : '$bodyMd';
   const textColor = isTabNavigator ? '$textDisabled' : '$textSubdued';
-  const isUpToDate = useMemo(() => {
-    if (!appUpdateInfo.latestVersion) {
-      return true;
-    }
-    if (appUpdateInfo.jsBundleVersion) {
-      return (
-        appUpdateInfo.latestVersion === platformEnv.version &&
-        appUpdateInfo.jsBundleVersion === platformEnv.bundleVersion
-      );
-    }
-    return appUpdateInfo.latestVersion === platformEnv.version;
-  }, [appUpdateInfo.jsBundleVersion, appUpdateInfo.latestVersion]);
   const twitterFollowUrl = useMemo(() => {
     if (!locale) {
       return TWITTER_FOLLOW_URL;
@@ -594,11 +513,6 @@ export function SocialButtonGroup() {
           url={GITHUB_URL}
           text={intl.formatMessage({ id: ETranslations.global_github })}
         />
-        <SupportButton
-          text={intl.formatMessage({
-            id: ETranslations.settings_contact_us,
-          })}
-        />
       </XStack>
       <YStack
         jc="center"
@@ -619,17 +533,6 @@ export function SocialButtonGroup() {
         >
           {upperFirst(versionString)}
         </SizableText>
-        {!isTabNavigator && isUpToDate ? (
-          <SizableText
-            color="$textDisabled"
-            mt="$1"
-            size={textSize}
-            ai="center"
-            textAlign="center"
-          >
-            {intl.formatMessage({ id: ETranslations.update_app_up_to_date })}
-          </SizableText>
-        ) : null}
       </YStack>
     </YStack>
   );

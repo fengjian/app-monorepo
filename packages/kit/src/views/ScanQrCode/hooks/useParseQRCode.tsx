@@ -26,7 +26,6 @@ import type {
 import { ETranslations } from '@onekeyhq/shared/src/locale';
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
 import {
-  EAppUpdateRoutes,
   EModalRewardCenterRoutes,
   EModalRoutes,
   EModalSettingRoutes,
@@ -215,12 +214,6 @@ const useParseQRCode = () => {
           await closeScanPage();
           navigation.pushModal(EModalRoutes.SettingModal, {
             screen: EModalSettingRoutes.SettingProtectModal,
-          });
-          break;
-        case EQRCodeHandlerType.UPDATE_PREVIEW:
-          await closeScanPage();
-          navigation.pushModal(EModalRoutes.AppUpdateModal, {
-            screen: EAppUpdateRoutes.UpdatePreview,
           });
           break;
         case EQRCodeHandlerType.PRIME_TRANSFER:

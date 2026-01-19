@@ -248,7 +248,6 @@ function WalletActions({ ...rest }: IXStackProps) {
           <WalletActionReceive
             key="receive"
             customization={customization}
-            useSelector
           />
         );
       case 'swap':

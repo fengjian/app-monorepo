@@ -9,7 +9,6 @@ import { keylessOnboardingCache } from '../../components/KeylessWallet/useKeyles
 import { AccountManagerStacks } from '../../views/AccountManagerStacks/router';
 import { ModalAddressBookRouter } from '../../views/AddressBook/router';
 import { ModalApprovalManagementStack } from '../../views/ApprovalManagement/router';
-import { AppUpdateRouter } from '../../views/AppUpdate/router';
 import { AssetSelectorRouter } from '../../views/AssetSelector/router';
 import { BulkCopyAddressesModalRouter } from '../../views/BulkCopyAddresses/router';
 import { ChainSelectorRouter } from '../../views/ChainSelector/router';
@@ -165,11 +164,6 @@ const router: IModalRootNavigatorConfig<EModalRoutes>[] = [
     children: ModalAddressBookRouter,
   },
   {
-    name: EModalRoutes.AppUpdateModal,
-    rewrite: '/update',
-    children: AppUpdateRouter,
-  },
-  {
     name: EModalRoutes.FiatCryptoModal,
     children: ModalFiatCryptoRouter,
   },
@@ -234,10 +228,6 @@ if (platformEnv.isDev) {
 export const modalRouter = router;
 
 export const fullModalRouter = [
-  {
-    name: EModalRoutes.AppUpdateModal,
-    children: AppUpdateRouter,
-  },
   {
     name: EModalRoutes.DAppConnectionModal,
     children: DAppConnectionRouter,

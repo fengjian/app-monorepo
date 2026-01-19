@@ -35,7 +35,6 @@ import {
 } from '@onekeyhq/components';
 import GiftExpandOnDark from '@onekeyhq/kit/assets/animations/gift-expand-on-dark.json';
 import GiftExpandOnLight from '@onekeyhq/kit/assets/animations/gift-expand-on-light.json';
-import { useOneKeyAuth } from '@onekeyhq/kit/src/components/OneKeyAuth/useOneKeyAuth';
 import useAppNavigation from '@onekeyhq/kit/src/hooks/useAppNavigation';
 import { useShowAddressBook } from '@onekeyhq/kit/src/hooks/useShowAddressBook';
 import { useActiveAccount } from '@onekeyhq/kit/src/states/jotai/contexts/accountSelector';
@@ -52,7 +51,6 @@ import {
 } from '@onekeyhq/kit-bg/src/states/jotai/atoms';
 import { ETranslations } from '@onekeyhq/shared/src/locale';
 import { defaultLogger } from '@onekeyhq/shared/src/logger/logger';
-import { showIntercom } from '@onekeyhq/shared/src/modules3rdParty/intercom';
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
 import {
   EModalRoutes,
@@ -62,7 +60,7 @@ import {
   ERootRoutes,
 } from '@onekeyhq/shared/src/routes';
 import { EModalBulkCopyAddressesRoutes } from '@onekeyhq/shared/src/routes/bulkCopyAddresses';
-import { EPrimeFeatures, EPrimePages } from '@onekeyhq/shared/src/routes/prime';
+import { EPrimePages } from '@onekeyhq/shared/src/routes/prime';
 import deviceUtils from '@onekeyhq/shared/src/utils/deviceUtils';
 import extUtils from '@onekeyhq/shared/src/utils/extUtils';
 import networkUtils from '@onekeyhq/shared/src/utils/networkUtils';
@@ -77,19 +75,10 @@ import { useThemeVariant } from '../../hooks/useThemeVariant';
 import { useDeviceManagerNavigation } from '../../views/DeviceManagement/hooks/useDeviceManagerNavigation';
 import { HomeFirmwareUpdateReminder } from '../../views/FirmwareUpdate/components/HomeFirmwareUpdateReminder';
 import { WalletXfpStatusReminder } from '../../views/Home/components/WalletXfpStatusReminder/WalletXfpStatusReminder';
-import { useOnPrimeButtonPressed } from '../../views/Prime/components/PrimeHeaderIconButton/PrimeHeaderIconButton';
 import { usePrimeAvailable } from '../../views/Prime/hooks/usePrimeAvailable';
-import { showRedemptionCenterDialog } from '../../views/Redemption/components/RedemptionCenterDialog';
 import useScanQrCode from '../../views/ScanQrCode/hooks/useScanQrCode';
-import { OneKeyIdAvatar } from '../../views/Setting/pages/OneKeyId';
 import { ESettingsTabNames } from '../../views/Setting/pages/Tab/config';
 import { AccountSelectorProviderMirror } from '../AccountSelector';
-import { useEditPrimeProfileDialog } from '../RenameDialog';
-import { UpdateReminder } from '../UpdateReminder';
-import {
-  isShowAppUpdateUIWhenUpdating,
-  useAppUpdateInfo,
-} from '../UpdateReminder/hooks';
 import { WalletAvatar } from '../WalletAvatar';
 
 import type { IDeviceManagementListItem } from '../../views/DeviceManagement/pages/DeviceManagementListModal';
@@ -135,10 +124,6 @@ function MoreActionContentHeader({
 }) {
   const intl = useIntl();
   const isDesktopMode = useIsDesktopModeUIInTabPages();
-
-  const handleCustomerSupport = useCallback(() => {
-    void showIntercom();
-  }, []);
 
   const {
     activeAccount: { account, network },
@@ -233,17 +218,9 @@ function MoreActionContentHeader({
   const items = useMemo(() => {
     return [
       ...popupMenu,
-      {
-        title: intl.formatMessage({
-          id: ETranslations.settings_contact_us,
-        }),
-        icon: 'HelpSupportOutline',
-        onPress: handleCustomerSupport,
-        trackID: 'wallet-customer-support',
-      },
       firstActionItem,
     ];
-  }, [handleCustomerSupport, intl, popupMenu, firstActionItem]);
+  }, [popupMenu, firstActionItem]);
 
   const handleBack = useCallback(() => {
     if (rootNavigationRef.current?.canGoBack?.()) {
@@ -406,8 +383,6 @@ function MoreActionContentGridItem({
     onPress();
   }, [closePopover, onPress, trackID]);
 
-  const { user } = useOneKeyAuth();
-  const isPrimeUser = user?.primeSubscription?.isActive && user?.onekeyUserId;
   const themeVariant = useThemeVariant();
 
   if (isPrimeFeature && !isPrimeAvailable) {
@@ -480,8 +455,7 @@ function MoreActionContentGridItem({
             </Stack>
           </Stack>
         ) : null}
-        {/* Only show Prime badge for non-Prime users */}
-        {isPrimeFeature && !isPrimeUser ? (
+        {isPrimeFeature ? (
           <Stack
             position="absolute"
             right={-10}
@@ -513,226 +487,6 @@ function MoreActionDivider() {
   return (
     <XStack py="$2">
       <Divider borderColor={isDesktopMode ? '$neutral3' : '$borderSubdued'} />
-    </XStack>
-  );
-}
-
-function MoreActionOneKeyId() {
-  const intl = useIntl();
-  const { user, isLoggedIn, loginOneKeyId } = useOneKeyAuth();
-  const {
-    activeAccount: { network },
-  } = useActiveAccount({ num: 0 });
-
-  const { closePopover } = usePopoverContext();
-
-  useEffect(() => {
-    if (isLoggedIn) {
-      void backgroundApiProxy.servicePrime.apiFetchPrimeUserInfo();
-    }
-  }, [isLoggedIn]);
-
-  const displayName = useMemo(() => {
-    if (!isLoggedIn) {
-      return intl.formatMessage({ id: ETranslations.prime_signup_login });
-    }
-    return user?.nickname ?? 'OneKey ID';
-  }, [isLoggedIn, user?.nickname, intl]);
-  const email = useMemo(() => {
-    if (!isLoggedIn) {
-      return intl.formatMessage({ id: ETranslations.prime_signup_login });
-    }
-    return user?.displayEmail || 'OneKey ID';
-  }, [isLoggedIn, user?.displayEmail, intl]);
-
-  const navigation = useAppNavigation();
-  const showEditPrimeProfileDialog = useEditPrimeProfileDialog();
-
-  const handleAvatarPress = useCallback(
-    async (e: GestureResponderEvent) => {
-      e.stopPropagation();
-      await closePopover?.();
-      await showEditPrimeProfileDialog();
-    },
-    [closePopover, showEditPrimeProfileDialog],
-  );
-
-  const handleNavigateToOneKeyId = useCallback(async () => {
-    await closePopover?.();
-    navigation.pushModal(EModalRoutes.PrimeModal, {
-      screen: EPrimePages.OneKeyId,
-    });
-  }, [closePopover, navigation]);
-
-  const handlePress = useCallback(async () => {
-    if (isLoggedIn) {
-      await handleNavigateToOneKeyId();
-    } else {
-      await closePopover?.();
-      await loginOneKeyId({
-        toOneKeyIdPageOnLoginSuccess: false,
-      });
-    }
-  }, [isLoggedIn, handleNavigateToOneKeyId, closePopover, loginOneKeyId]);
-
-  const { icon, onPrimeButtonPressed } = useOnPrimeButtonPressed({
-    onPress: closePopover,
-    networkId: network?.id,
-  });
-
-  const handlePrimeButtonPressed = useCallback(
-    async (e: GestureResponderEvent) => {
-      e.stopPropagation();
-      await closePopover?.();
-      await onPrimeButtonPressed();
-    },
-    [closePopover, onPrimeButtonPressed],
-  );
-
-  const isPrimeUser = user?.primeSubscription?.isActive && user?.onekeyUserId;
-  const isPrimeDeviceLimitExceeded = user?.isPrimeDeviceLimitExceeded === true;
-
-  if (!isLoggedIn) {
-    return (
-      <XStack
-        alignItems="center"
-        py="$4"
-        px="$4"
-        mx="$1"
-        mt="$1"
-        userSelect="none"
-        justifyContent="space-between"
-        onPress={handlePress}
-        borderRadius="$2"
-        hoverStyle={{
-          bg: '$bgHover',
-        }}
-        pressStyle={{
-          bg: '$bgActive',
-        }}
-      >
-        <XStack alignItems="center" gap="$3" flex={1}>
-          <OneKeyIdAvatar size="$10" />
-          <SizableText
-            size="$headingLg"
-            color="$text"
-            numberOfLines={1}
-            userSelect="none"
-          >
-            OneKey ID
-          </SizableText>
-        </XStack>
-        <XStack
-          alignItems="center"
-          gap="$0.5"
-          pl="$3"
-          pr="$1.5"
-          py="$1.5"
-          borderRadius="$full"
-          borderWidth={StyleSheet.hairlineWidth}
-          borderColor="$border"
-          hoverStyle={{ borderColor: '$borderHover' }}
-        >
-          <SizableText size="$bodyMdMedium" color="$text" userSelect="none">
-            {intl.formatMessage({ id: ETranslations.prime_signup_login })}
-          </SizableText>
-          <Icon name="ChevronRightSmallOutline" size="$4" color="$icon" />
-        </XStack>
-      </XStack>
-    );
-  }
-
-  return (
-    <XStack
-      alignItems="center"
-      py="$4"
-      px="$4"
-      mx="$1"
-      mt="$1"
-      gap="$5"
-      userSelect="none"
-      justifyContent="space-between"
-      onPress={handleNavigateToOneKeyId}
-      borderRadius="$2"
-      hoverStyle={{
-        bg: '$bgHover',
-      }}
-      pressStyle={{
-        bg: '$bgActive',
-      }}
-    >
-      <XStack alignItems="center" gap="$3" flex={1}>
-        <Stack onPress={handleAvatarPress}>
-          <OneKeyIdAvatar size="$14" />
-        </Stack>
-
-        <YStack flex={1} gap="$1">
-          <XStack
-            alignItems="center"
-            gap="$1.5"
-            alignSelf="flex-start"
-            maxWidth="100%"
-          >
-            <SizableText
-              size="$headingLg"
-              color="$text"
-              numberOfLines={1}
-              ellipsizeMode="tail"
-              userSelect="none"
-              flexShrink={1}
-            >
-              {displayName}
-            </SizableText>
-            {isPrimeUser ? (
-              <XStack
-                ai="center"
-                jc="center"
-                gap="$1"
-                px="$2"
-                h={22}
-                opacity={isPrimeDeviceLimitExceeded ? 0.7 : 1}
-                bg={
-                  isPrimeDeviceLimitExceeded ? '$bgCautionSubdued' : '$brand2'
-                }
-                borderRadius="$full"
-                borderWidth={StyleSheet.hairlineWidth}
-                borderColor={
-                  isPrimeDeviceLimitExceeded
-                    ? '$borderCautionSubdued'
-                    : '$brand4'
-                }
-                flexShrink={0}
-                onPress={handlePrimeButtonPressed}
-              >
-                <Icon
-                  name={isPrimeDeviceLimitExceeded ? 'PrimeSolid' : icon}
-                  size="$4"
-                  color={
-                    isPrimeDeviceLimitExceeded ? '$iconCaution' : undefined
-                  }
-                />
-                <SizableText
-                  size="$bodyMdMedium"
-                  color={
-                    isPrimeDeviceLimitExceeded ? '$textCaution' : '$brand12'
-                  }
-                >
-                  Prime
-                </SizableText>
-              </XStack>
-            ) : null}
-          </XStack>
-          <SizableText
-            size="$bodyMd"
-            color="$textSubdued"
-            numberOfLines={1}
-            userSelect="none"
-          >
-            {email}
-          </SizableText>
-        </YStack>
-      </XStack>
-      <Icon name="ChevronRightSmallOutline" size="$5" color="$iconSubdued" />
     </XStack>
   );
 }
@@ -799,33 +553,16 @@ const useIsShowWalletXfpStatus = () => {
   );
 };
 
-// TODO: Handle potential duplicate update detection requests
-// This component may trigger multiple update checks simultaneously
-// Deduplicate or throttle API requests.
-// to prevent unnecessary API calls and improve performance
-const useIsShowAppUpdateDot = () => {
-  const appUpdateInfo = useAppUpdateInfo(true);
-  const isAppNeedUpdate = appUpdateInfo.isNeedUpdate;
-  const isShowAppUpdateUI = useMemo(() => {
-    return isShowAppUpdateUIWhenUpdating({
-      updateStrategy: appUpdateInfo.data.updateStrategy,
-      updateStatus: appUpdateInfo.data.status,
-    });
-  }, [appUpdateInfo.data.updateStrategy, appUpdateInfo.data.status]);
+const useIsShowUpdateDot = () => {
   const isNeedUpgradeFirmware = useIsNeedUpgradeFirmware();
   const isShowWalletXfpStatus = useIsShowWalletXfpStatus();
-  return (
-    (isShowAppUpdateUI && isAppNeedUpdate) ||
-    isNeedUpgradeFirmware ||
-    isShowWalletXfpStatus
-  );
+  return isNeedUpgradeFirmware || isShowWalletXfpStatus;
 };
 
 function UpdateReminders() {
-  const isShowUpgradeComponents = useIsShowAppUpdateDot();
+  const isShowUpgradeComponents = useIsShowUpdateDot();
   return isShowUpgradeComponents ? (
     <YStack gap="$2">
-      <UpdateReminder />
       <HomeFirmwareUpdateReminder />
       <WalletXfpStatusReminder />
     </YStack>
@@ -892,12 +629,6 @@ function MoreActionGeneralGrid() {
   const navigation = useAppNavigation();
   const onLock = useOnLock();
 
-  const handleSettings = useCallback(() => {
-    navigation.pushModal(EModalRoutes.SettingModal, {
-      screen: EModalSettingRoutes.SettingListModal,
-    });
-  }, [navigation]);
-
   const handleLock = useCallback(async () => {
     await onLock();
   }, [onLock]);
@@ -936,12 +667,6 @@ function MoreActionGeneralGrid() {
   const items = useMemo(() => {
     return [
       {
-        title: intl.formatMessage({ id: ETranslations.settings_settings }),
-        icon: 'SettingsOutline' as const,
-        onPress: handleSettings,
-        trackID: 'wallet-settings',
-      },
-      {
         title: intl.formatMessage({ id: ETranslations.scan_scan_qr_code }),
         icon: 'ScanOutline' as const,
         onPress: handleScan,
@@ -964,7 +689,7 @@ function MoreActionGeneralGrid() {
           }
         : undefined,
     ].filter(Boolean);
-  }, [handleLock, handlePrime, handleScan, handleSettings, intl]);
+  }, [handleLock, handlePrime, handleScan, intl]);
   return (
     <BaseMoreActionGrid
       title={intl.formatMessage({ id: ETranslations.global_general })}
@@ -1018,29 +743,9 @@ const MoreActionWalletGrid = () => {
     });
   }, [navigation]);
 
-  const { user } = useOneKeyAuth();
-  const isPrimeUser = user?.primeSubscription?.isActive && user?.onekeyUserId;
   const {
     activeAccount: { wallet, network },
   } = useActiveAccount({ num: 0 });
-  const checkIsPrimeUser = useCallback(
-    (showFeature: EPrimeFeatures) => {
-      if (user?.primeSubscription?.isActive && user?.onekeyUserId) {
-        return true;
-      }
-      navigation.pushFullModal(EModalRoutes.PrimeModal, {
-        screen: EPrimePages.PrimeFeatures,
-        params: {
-          showAllFeatures: false,
-          selectedFeature: showFeature,
-          selectedSubscriptionPeriod: 'P1Y',
-          networkId: network?.id,
-        },
-      });
-      return false;
-    },
-    [navigation, user, network?.id],
-  );
   const openBulkCopyAddressesModal = useCallback(async () => {
     const networkId = networkUtils.toNetworkIdFallback({
       networkId: network?.id,
@@ -1049,8 +754,6 @@ const MoreActionWalletGrid = () => {
 
     if (!networkId) return;
 
-    if (!checkIsPrimeUser(EPrimeFeatures.BulkCopyAddresses)) return;
-
     navigation.pushModal(EModalRoutes.BulkCopyAddressesModal, {
       screen: EModalBulkCopyAddressesRoutes.BulkCopyAddressesModal,
       params: {
@@ -1058,7 +761,7 @@ const MoreActionWalletGrid = () => {
         networkId,
       },
     });
-  }, [network?.id, checkIsPrimeUser, navigation, wallet?.id]);
+  }, [network?.id, navigation, wallet?.id]);
 
   const items = useMemo(() => {
     return [
@@ -1105,12 +808,6 @@ const MoreActionWalletGrid = () => {
             }),
             icon: 'Copy3Outline' as const,
             onPress: () => {
-              if (!isPrimeUser) {
-                defaultLogger.prime.subscription.primeEntryClick({
-                  featureName: EPrimeFeatures.BulkCopyAddresses,
-                  entryPoint: 'moreActions',
-                });
-              }
               void openBulkCopyAddressesModal();
             },
             trackID: 'bulk-copy-addresses-in-more-action',
@@ -1124,7 +821,6 @@ const MoreActionWalletGrid = () => {
     handlePreferences,
     handleSecurity,
     intl,
-    isPrimeUser,
     openBulkCopyAddressesModal,
   ]);
   return (
@@ -1137,36 +833,14 @@ const MoreActionWalletGrid = () => {
 
 const MoreActionMoreGrid = () => {
   const intl = useIntl();
-  const { closePopover } = usePopoverContext();
-  const { loginOneKeyId } = useOneKeyAuth();
-  const handleHelpAndSupport = useCallback(() => {
-    void showIntercom();
-  }, []);
   const themeVariant = useThemeVariant();
   const { toReferFriendsPage } = useReferFriends();
   const handleReferFriends = useCallback(() => {
     void toReferFriendsPage();
   }, [toReferFriendsPage]);
 
-  const handleRedeem = useCallback(async () => {
-    await closePopover?.();
-    try {
-      await loginOneKeyId();
-      showRedemptionCenterDialog();
-    } catch {
-      // User cancelled login, do nothing
-    }
-  }, [closePopover, loginOneKeyId]);
-
   const items = useMemo(() => {
     return [
-      {
-        title: intl.formatMessage({ id: ETranslations.settings_contact_us }),
-        icon: 'HelpSupportOutline' as const,
-        onPress: handleHelpAndSupport,
-        trackID: 'wallet-customer-support',
-      },
-
       {
         title: intl.formatMessage({ id: ETranslations.sidebar_refer_a_friend }),
         lottieSrc:
@@ -1174,20 +848,8 @@ const MoreActionMoreGrid = () => {
         testID: 'referral' as const,
         onPress: handleReferFriends,
       },
-      {
-        title: intl.formatMessage({ id: ETranslations.global_redeem }),
-        icon: 'TicketOutline' as const,
-        onPress: handleRedeem,
-        trackID: 'wallet-redeem',
-      },
     ];
-  }, [
-    handleHelpAndSupport,
-    handleRedeem,
-    intl,
-    themeVariant,
-    handleReferFriends,
-  ]);
+  }, [intl, themeVariant, handleReferFriends]);
   return (
     <BaseMoreActionGrid
       title={intl.formatMessage({ id: ETranslations.global_more })}
@@ -1326,7 +988,6 @@ function BaseMoreActionContent() {
     <YStack flex={1}>
       <ScrollView overflow="scroll" flex={1}>
         {platformEnv.isWebDappMode ? null : <UpdateReminders />}
-        {platformEnv.isWebDappMode ? null : <MoreActionOneKeyId />}
         {isDesktopMode ? null : <MoreActionDevice />}
         <MoreActionDivider />
         <MoreActionGeneralGrid />
@@ -1362,7 +1023,6 @@ function MoreActionContent({
       <YStack minHeight={560} {...containerStyle}>
         <MoreActionContentHeader />
         {platformEnv.isWebDappMode ? null : <UpdateReminders />}
-        {platformEnv.isWebDappMode ? null : <MoreActionOneKeyId />}
         {isDesktopMode ? null : <MoreActionDevice />}
         <MoreActionDivider />
         <MoreActionGeneralGrid />
@@ -1426,7 +1086,7 @@ function MoreButtonWithDot({
   const intl = useIntl();
   const [{ isCollapsed }] = useAppSideBarStatusAtom();
   const isDesktopMode = useIsDesktopModeUIInTabPages();
-  const isShowUpgradeDot = useIsShowAppUpdateDot();
+  const isShowUpgradeDot = useIsShowUpdateDot();
   const isShowRedDot = useIsShowRedDot();
 
   // Large dot for mobile
@@ -1434,7 +1094,7 @@ function MoreButtonWithDot({
     if (isShowUpgradeDot) {
       return (
         <Dot
-          color="$blue8"
+          color="$bgCriticalStrong"
           top={isDesktopMode ? 0 : '$-2'}
           right={isDesktopMode && isCollapsed ? undefined : '$-2.5'}
         />
@@ -1450,7 +1110,7 @@ function MoreButtonWithDot({
       <Stack
         width="$3"
         height="$3"
-        bg={isShowUpgradeDot ? '$iconInfo' : '$bgCriticalStrong'}
+        bg="$bgCriticalStrong"
         borderRadius="$full"
         position="absolute"
         right={-4}

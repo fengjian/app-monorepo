@@ -57,20 +57,11 @@ function useReceiveToken({
       token,
       withAllAggregateTokens,
       sameModal,
-      useSelector,
     }: {
       token?: IToken;
       withAllAggregateTokens?: boolean;
       sameModal?: boolean;
-      useSelector?: boolean;
     }) => {
-      if (useSelector) {
-        navigation.pushModal(EModalRoutes.ReceiveModal, {
-          screen: EModalReceiveRoutes.ReceiveSelector,
-        });
-        return;
-      }
-
       if (networkUtils.isLightningNetworkByNetworkId(networkId)) {
         if (sameModal) {
           navigation.push(EModalReceiveRoutes.CreateInvoice, {

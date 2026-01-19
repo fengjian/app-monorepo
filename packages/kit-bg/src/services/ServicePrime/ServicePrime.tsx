@@ -267,6 +267,13 @@ class ServicePrime extends ServiceBase {
     serverUserInfo: IPrimeServerUserInfo | undefined;
     primeSubscription: IPrimeSubscriptionInfo | undefined;
   }> {
+    const localUserInfo = await primePersistAtom.get();
+    return {
+      userInfo: localUserInfo,
+      serverUserInfo: undefined,
+      primeSubscription: localUserInfo?.primeSubscription,
+    };
+
     console.log('call servicePrime.apiFetchPrimeUserInfo');
     await this.loginMutex.waitForUnlock();
     const authToken = await this.backgroundApi.simpleDb.prime.getAuthToken();

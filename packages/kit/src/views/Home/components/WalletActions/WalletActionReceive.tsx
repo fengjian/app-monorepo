@@ -90,7 +90,6 @@ function WalletActionReceive({
       void handleOnReceive({
         withAllAggregateTokens: network?.isAllNetworks,
         sameModal,
-        useSelector,
       });
     }
   }, [
@@ -103,7 +102,6 @@ function WalletActionReceive({
     customization,
     handleOnReceive,
     sameModal,
-    useSelector,
   ]);
 
   if (renderTrigger) {
