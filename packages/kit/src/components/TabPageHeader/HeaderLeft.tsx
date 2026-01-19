@@ -1,0 +1,170 @@
+import { type ReactNode, useCallback, useMemo } from 'react';
+
+import { useIntl } from 'react-intl';
+import { TouchableOpacity } from 'react-native';
+
+import {
+  DebugRenderTracker,
+  NavBackButton,
+  Page,
+  SizableText,
+  XStack,
+  rootNavigationRef,
+  useMedia,
+} from '@onekeyhq/components';
+import {
+  EAppEventBusNames,
+  appEventBus,
+} from '@onekeyhq/shared/src/eventBus/appEventBus';
+import { ETranslations } from '@onekeyhq/shared/src/locale';
+import platformEnv from '@onekeyhq/shared/src/platformEnv';
+import {
+  ETabHomeRoutes,
+  ETabMarketRoutes,
+  ETabRoutes,
+} from '@onekeyhq/shared/src/routes';
+import { EAccountSelectorSceneName } from '@onekeyhq/shared/types';
+
+import { AccountSelectorProviderMirror } from '../AccountSelector';
+
+import { WalletConnectionGroup } from './components';
+import { UrlAccountPageHeader } from './urlAccountPageHeader';
+
+export function HeaderLeftCloseButton() {
+  return (
+    <Page.Close>
+      <NavBackButton />
+    </Page.Close>
+  );
+}
+const discoveryTabs = platformEnv.isNative
+  ? [
+      ETranslations.global_market,
+      ETranslations.global_earn,
+      ETranslations.global_browser,
+    ]
+  : [ETranslations.global_market, ETranslations.global_earn];
+
+function SegmentText({
+  translationId,
+  selected,
+}: {
+  translationId: (typeof discoveryTabs)[number];
+  selected: boolean;
+}) {
+  const intl = useIntl();
+  const handlePress = useCallback(() => {
+    appEventBus.emit(EAppEventBusNames.SwitchDiscoveryTabInNative, {
+      tab: translationId as
+        | ETranslations.global_market
+        | ETranslations.global_browser
+        | ETranslations.global_earn,
+    });
+  }, [translationId]);
+  return (
+    <TouchableOpacity onPress={handlePress} activeOpacity={1}>
+      <SizableText
+        size="$headingXl"
+        color={selected ? '$text' : '$textSubdued'}
+        onPress={handlePress}
+      >
+        {intl.formatMessage({ id: translationId })}
+      </SizableText>
+    </TouchableOpacity>
+  );
+}
+
+export function DiscoveryHeaderSegment({
+  selectedHeaderTab,
+}: {
+  selectedHeaderTab?: ETranslations;
+}) {
+  return (
+    <XStack gap="$4">
+      {discoveryTabs.map((tab) => (
+        <SegmentText
+          key={tab}
+          translationId={tab}
+          selected={selectedHeaderTab === tab}
+        />
+      ))}
+    </XStack>
+  );
+}
+
+export function HeaderLeft({
+  selectedHeaderTab,
+  sceneName,
+  tabRoute,
+  customHeaderLeftItems,
+}: {
+  selectedHeaderTab?: ETranslations;
+  sceneName: EAccountSelectorSceneName;
+  tabRoute: ETabRoutes;
+  customHeaderLeftItems?: ReactNode;
+}) {
+  const { gtMd: _gtMd } = useMedia();
+
+  const items = useMemo(() => {
+    if (customHeaderLeftItems) {
+      return customHeaderLeftItems;
+    }
+
+    if (sceneName === EAccountSelectorSceneName.homeUrlAccount) {
+      return (
+        <XStack gap="$1.5">
+          <NavBackButton
+            onPress={() => {
+              if (platformEnv.isWebDappMode) {
+                rootNavigationRef.current?.navigate(
+                  ETabRoutes.Market,
+                  {
+                    screen: ETabMarketRoutes.TabMarket,
+                  },
+                  {
+                    pop: true,
+                  },
+                );
+              } else {
+                rootNavigationRef.current?.navigate(
+                  ETabRoutes.Home,
+                  {
+                    screen: ETabHomeRoutes.TabHome,
+                  },
+                  {
+                    pop: true,
+                  },
+                );
+              }
+            }}
+          />
+          {platformEnv.isNativeIOS ? <UrlAccountPageHeader /> : null}
+        </XStack>
+      );
+    }
+
+    if (tabRoute === ETabRoutes.Discovery) {
+      return platformEnv.isNative ||
+        platformEnv.isExtensionUiPopup ||
+        platformEnv.isExtensionUiSidePanel ? (
+        <DiscoveryHeaderSegment selectedHeaderTab={selectedHeaderTab} />
+      ) : null;
+    }
+
+    // For mobile and native platforms, keep the original layout
+    return <WalletConnectionGroup tabRoute={tabRoute} />;
+  }, [customHeaderLeftItems, sceneName, tabRoute, selectedHeaderTab]);
+  return (
+    <AccountSelectorProviderMirror
+      enabledNum={[0]}
+      config={{
+        sceneName,
+        sceneUrl: '',
+      }}
+    >
+      <DebugRenderTracker name="TabPageHeader__HeaderLeft" position="top-right">
+        {items}
+      </DebugRenderTracker>
+    </AccountSelectorProviderMirror>
+  );
+}

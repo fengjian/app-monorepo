@@ -1,0 +1,113 @@
+import { useMemo } from 'react';
+
+import BigNumber from 'bignumber.js';
+import { isString } from 'lodash';
+
+import type { FontSizeTokens } from '@onekeyhq/components/src/shared/tamagui';
+import type { INumberFormatProps } from '@onekeyhq/shared/src/utils/numberUtils';
+import { numberFormatAsRenderText } from '@onekeyhq/shared/src/utils/numberUtils';
+
+import { SizableText } from '../../primitives/SizeableText';
+import { getFontSize } from '../../utils/getFontSize';
+
+import type { ISizableTextProps } from '../../primitives';
+
+export type INumberSizeableTextProps = Omit<ISizableTextProps, 'children'> &
+  INumberFormatProps & {
+    subTextStyle?: Omit<ISizableTextProps, 'children'>;
+    contentStyle?: Omit<ISizableTextProps, 'children'>;
+    children: string | number | undefined;
+    autoFormatter?: 'price-marketCap' | 'balance-marketCap' | 'value-marketCap';
+    autoFormatterThreshold?: number;
+  };
+
+export function NumberSizeableText({
+  children,
+  formatter,
+  formatterOptions,
+  subTextStyle,
+  contentStyle,
+  hideValue,
+  autoFormatter,
+  autoFormatterThreshold = 1_000_000,
+  ...props
+}: INumberSizeableTextProps) {
+  const actualFormatter = useMemo(() => {
+    if (autoFormatter && ['string', 'number'].includes(typeof children)) {
+      const numericValue = new BigNumber(String(children));
+      const isAboveThreshold = numericValue.gte(autoFormatterThreshold);
+
+      switch (autoFormatter) {
+        case 'price-marketCap':
+          return isAboveThreshold ? 'marketCap' : 'price';
+        case 'balance-marketCap':
+          return isAboveThreshold ? 'marketCap' : 'balance';
+        case 'value-marketCap':
+          return isAboveThreshold ? 'marketCap' : 'value';
+        default:
+          return formatter;
+      }
+    }
+    return formatter;
+  }, [autoFormatter, autoFormatterThreshold, children, formatter]);
+
+  const result = useMemo(() => {
+    if (isString(children) && ['--', ' -- ', ' - ', '-'].includes(children)) {
+      return children;
+    }
+    return ['string', 'number'].includes(typeof children)
+      ? numberFormatAsRenderText(String(children), {
+          formatter: actualFormatter,
+          formatterOptions,
+        })
+      : '';
+  }, [actualFormatter, formatterOptions, children]);
+
+  const scriptFontSize = useMemo(
+    () =>
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+      props.fontSize !== 'unset'
+        ? Math.ceil(
+            (props.fontSize as number) ||
+              getFontSize(props.size as FontSizeTokens) * 0.6,
+          )
+        : props.fontSize,
+    [props.fontSize, props.size],
+  );
+
+  if (hideValue) {
+    if (formatter === 'balance' && formatterOptions?.tokenSymbol) {
+      return (
+        <SizableText {...props}>
+          **** {formatterOptions.tokenSymbol}
+        </SizableText>
+      );
+    }
+    return <SizableText {...props}>****</SizableText>;
+  }
+
+  return typeof result === 'string' ? (
+    <SizableText {...props} {...contentStyle}>
+      {result}
+    </SizableText>
+  ) : (
+    <SizableText {...props} {...contentStyle}>
+      {result.map((r, index) =>
+        typeof r === 'string' ? (
+          <SizableText key={index} {...props}>
+            {r}
+          </SizableText>
+        ) : (
+          <SizableText
+            key={index}
+            {...props}
+            fontSize={scriptFontSize}
+            {...subTextStyle}
+          >
+            {r.value}
+          </SizableText>
+        ),
+      )}
+    </SizableText>
+  );
+}
