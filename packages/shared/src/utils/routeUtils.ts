@@ -1,7 +1,6 @@
 import { OneKeyLocalError } from '@onekeyhq/shared/src/errors';
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
 import {
-  EAppUpdateRoutes,
   EGalleryRoutes,
   EModalReferFriendsRoutes,
   EModalRoutes,
@@ -109,9 +108,8 @@ export const buildAllowList = (
           }
         }
       }
-      // keep the path random if the screen is not found
       if (!screen) {
-        return Math.random().toString();
+        return '';
       }
       const nextScreenConfig = screen.screens;
       if (nextScreenConfig) {
@@ -132,170 +130,244 @@ export const buildAllowList = (
 
   // fill in the route name as the key according to the route stacks order
   // Page: /main/tab-Home/TabHomeStack1
-  const rules = {
-    // [pagePath`${ERootRoutes.Main}${ETabRoutes.Home}${ETabHomeRoutes.TabHome}`]:
-    //   {
-    //     showUrl: true,
-    //     showParams: true,
-    //   },
-    // Market Pages
-    // [pagePath`${ERootRoutes.Main}${ETabRoutes.Market}${ETabMarketRoutes.TabMarket}`]:
-    //   {
-    //     showUrl: true,
-    //     showParams: true,
-    //   },
-    [pagePath`${ERootRoutes.Main}${ETabRoutes.Market}${ETabMarketRoutes.MarketDetail}`]:
-      {
-        showUrl: true,
-        showParams: true,
-      },
-    [pagePath`${ERootRoutes.Main}${ETabRoutes.Market}${ETabMarketRoutes.MarketDetailV2}`]:
-      {
-        showUrl: true,
-        showParams: true,
-      },
-    [pagePath`${ERootRoutes.Main}${ETabRoutes.Market}${ETabMarketRoutes.MarketNativeDetail}`]:
-      {
-        showUrl: true,
-        showParams: true,
-      },
-    [pagePath`${ERootRoutes.Main}${ETabRoutes.ReferFriends}${TabReferAFriend}`]:
-      { showUrl: true, showParams: false },
-    [pagePath`${ERootRoutes.Main}${ETabRoutes.ReferFriends}${TabInviteReward}`]:
-      { showUrl: true, showParams: false },
-    [pagePath`${ERootRoutes.Main}${ETabRoutes.Earn}`]: {
+  const rules: Record<string, IAllowSettingItem> = {};
+
+  const canResolveScreenPath = (screenNames: string[]) => {
+    let screenConfig = screens;
+    for (const screenName of screenNames) {
+      const screen = screenConfig[screenName];
+      if (!screen) {
+        return false;
+      }
+      screenConfig = screen.screens || {};
+    }
+    return true;
+  };
+
+  const buildPagePath = (screenNames: string[]) =>
+    canResolveScreenPath(screenNames)
+      ? pagePath({} as TemplateStringsArray, ...screenNames)
+      : undefined;
+
+  const addRule = (screenNames: string[], rule: IAllowSettingItem) => {
+    const path = buildPagePath(screenNames);
+    if (path) {
+      rules[path] = rule;
+    }
+  };
+
+  // Market Pages
+  addRule(
+    [ERootRoutes.Main, ETabRoutes.Market, ETabMarketRoutes.MarketDetail],
+    {
       showUrl: true,
       showParams: true,
     },
-    [pagePath`${ERootRoutes.Main}${ETabRoutes.Market}`]: {
+  );
+  addRule(
+    [ERootRoutes.Main, ETabRoutes.Market, ETabMarketRoutes.MarketDetailV2],
+    {
       showUrl: true,
       showParams: true,
     },
-    [pagePath`${ERootRoutes.Modal}${EModalRoutes.StakingModal}${EModalStakingRoutes.ProtocolDetails}`]:
-      {
-        showUrl: true,
-        showParams: true,
-      },
-    [pagePath`${ERootRoutes.Modal}${EModalRoutes.StakingModal}${EModalStakingRoutes.ProtocolDetailsV2}`]:
-      {
-        showUrl: true,
-        showParams: true,
-      },
-    [pagePath`${ERootRoutes.Modal}${EModalRoutes.StakingModal}${EModalStakingRoutes.ManagePosition}`]:
-      {
-        showUrl: true,
-        showParams: true,
-      },
-    // Page: /main/tab-Swap/TabSwap
-    // Don't worry, the URL here is virtual, actually /swap.
-    // it will automatically find the real route according to the route stacks.
+  );
+  addRule(
+    [
+      ERootRoutes.Main,
+      ETabRoutes.Market,
+      ETabMarketRoutes.MarketNativeDetail,
+    ],
+    {
+      showUrl: true,
+      showParams: true,
+    },
+  );
+  addRule(
+    [ERootRoutes.Main, ETabRoutes.ReferFriends, TabReferAFriend],
+    { showUrl: true, showParams: false },
+  );
+  addRule(
+    [ERootRoutes.Main, ETabRoutes.ReferFriends, TabInviteReward],
+    { showUrl: true, showParams: false },
+  );
+  addRule([ERootRoutes.Main, ETabRoutes.Earn], {
+    showUrl: true,
+    showParams: true,
+  });
+  addRule([ERootRoutes.Main, ETabRoutes.Market], {
+    showUrl: true,
+    showParams: true,
+  });
+  addRule(
+    [
+      ERootRoutes.Modal,
+      EModalRoutes.StakingModal,
+      EModalStakingRoutes.ProtocolDetails,
+    ],
+    {
+      showUrl: true,
+      showParams: true,
+    },
+  );
+  addRule(
+    [
+      ERootRoutes.Modal,
+      EModalRoutes.StakingModal,
+      EModalStakingRoutes.ProtocolDetailsV2,
+    ],
+    {
+      showUrl: true,
+      showParams: true,
+    },
+  );
+  addRule(
+    [
+      ERootRoutes.Modal,
+      EModalRoutes.StakingModal,
+      EModalStakingRoutes.ManagePosition,
+    ],
+    {
+      showUrl: true,
+      showParams: true,
+    },
+  );
+  // Page: /main/tab-Swap/TabSwap
+  // Don't worry, the URL here is virtual, actually /swap.
+  // it will automatically find the real route according to the route stacks.
 
-    // Swap Pages
-    [pagePath`${ERootRoutes.Main}${ETabRoutes.Swap}${ETabSwapRoutes.TabSwap}`]:
-      {
-        showUrl: true,
-        showParams: true,
-      },
+  // Swap Pages
+  addRule(
+    [ERootRoutes.Main, ETabRoutes.Swap, ETabSwapRoutes.TabSwap],
+    {
+      showUrl: true,
+      showParams: true,
+    },
+  );
 
-    [pagePath`${ERootRoutes.Onboarding}${EOnboardingV2Routes.OnboardingV2}${EOnboardingPagesV2.GetStarted}`]:
-      {
-        showUrl: true,
-        showParams: true,
-      },
-    // Discovery Pages
-    // [pagePath`${ERootRoutes.Main}${ETabRoutes.Discovery}${ETabDiscoveryRoutes.TabDiscovery}`]:
-    //   {
-    //     showUrl: true,
-    //     showParams: true,
-    //   },
+  addRule(
+    [
+      ERootRoutes.Onboarding,
+      EOnboardingV2Routes.OnboardingV2,
+      EOnboardingPagesV2.GetStarted,
+    ],
+    {
+      showUrl: true,
+      showParams: true,
+    },
+  );
 
-    [pagePath`${ERootRoutes.Modal}${EModalRoutes.ReferFriendsModal}${EModalReferFriendsRoutes.ReferAFriend}`]:
-      {
-        showUrl: true,
-        showParams: false,
-      },
-    [pagePath`${ERootRoutes.Modal}${EModalRoutes.SignatureConfirmModal}${EModalSignatureConfirmRoutes.TxConfirmFromDApp}`]:
-      {
-        showUrl: true,
-        showParams: true,
-      },
-    [pagePath`${ERootRoutes.Modal}${EModalRoutes.SignatureConfirmModal}${EModalSignatureConfirmRoutes.MessageConfirmFromDApp}`]:
-      {
-        showUrl: true,
-        showParams: true,
-      },
-    [pagePath`${ERootRoutes.Modal}${EModalRoutes.AppUpdateModal}${EAppUpdateRoutes.UpdatePreview}`]:
-      {
-        showUrl: true,
-        showParams: true,
-      },
-    // eslint-disable-next-line no-nested-ternary
-    ...(perpTabShowWeb
-      ? {
-          [pagePath`${ERootRoutes.Main}${ETabRoutes.WebviewPerpTrade}`]: {
-            showUrl: true,
-            showParams: true,
-          },
-        }
-      : !perpDisabled
-      ? {
-          [pagePath`${ERootRoutes.Main}${ETabRoutes.Perp}`]: {
-            showUrl: true,
-            showParams: true,
-          },
-        }
-      : {}),
-  } as Record<string, IAllowSettingItem>;
+  addRule(
+    [
+      ERootRoutes.Modal,
+      EModalRoutes.ReferFriendsModal,
+      EModalReferFriendsRoutes.ReferAFriend,
+    ],
+    {
+      showUrl: true,
+      showParams: false,
+    },
+  );
+  addRule(
+    [
+      ERootRoutes.Modal,
+      EModalRoutes.SignatureConfirmModal,
+      EModalSignatureConfirmRoutes.TxConfirmFromDApp,
+    ],
+    {
+      showUrl: true,
+      showParams: true,
+    },
+  );
+  addRule(
+    [
+      ERootRoutes.Modal,
+      EModalRoutes.SignatureConfirmModal,
+      EModalSignatureConfirmRoutes.MessageConfirmFromDApp,
+    ],
+    {
+      showUrl: true,
+      showParams: true,
+    },
+  );
+
+  if (perpTabShowWeb) {
+    addRule([ERootRoutes.Main, ETabRoutes.WebviewPerpTrade], {
+      showUrl: true,
+      showParams: true,
+    });
+  } else if (!perpDisabled) {
+    addRule([ERootRoutes.Main, ETabRoutes.Perp], {
+      showUrl: true,
+      showParams: true,
+    });
+  }
 
   if (platformEnv.isExtension) {
     // Permission WebUSB
-    rules[pagePath`${ERootRoutes.PermissionWebDevice}`] = {
+    addRule([ERootRoutes.PermissionWebDevice], {
       showUrl: true,
       showParams: true,
-    };
+    });
   }
 
   if (platformEnv.isDev) {
     Object.values(EGalleryRoutes).forEach((pageName) => {
-      rules[pagePath`${ERootRoutes.Main}${ETabRoutes.Developer}${pageName}`] = {
+      addRule([ERootRoutes.Main, ETabRoutes.Developer, pageName], {
         showUrl: true,
         showParams: true,
-      };
+      });
     });
     // Developer Pages
-    rules[
-      pagePath`${ERootRoutes.Main}${ETabRoutes.Developer}${ETabDeveloperRoutes.TabDeveloper}`
-    ] = {
-      showUrl: true,
-      showParams: true,
-    };
-    rules[
-      pagePath`${ERootRoutes.Main}${ETabRoutes.Developer}${ETabDeveloperRoutes.DevHome}`
-    ] = {
-      showUrl: true,
-      showParams: true,
-    };
+    addRule(
+      [
+        ERootRoutes.Main,
+        ETabRoutes.Developer,
+        ETabDeveloperRoutes.TabDeveloper,
+      ],
+      {
+        showUrl: true,
+        showParams: true,
+      },
+    );
+    addRule(
+      [ERootRoutes.Main, ETabRoutes.Developer, ETabDeveloperRoutes.DevHome],
+      {
+        showUrl: true,
+        showParams: true,
+      },
+    );
 
-    rules[
-      pagePath`${ERootRoutes.Main}${ETabRoutes.Developer}${ETabDeveloperRoutes.DevHomeStack1}`
-    ] = {
-      showUrl: true,
-      showParams: true,
-    };
+    addRule(
+      [
+        ERootRoutes.Main,
+        ETabRoutes.Developer,
+        ETabDeveloperRoutes.DevHomeStack1,
+      ],
+      {
+        showUrl: true,
+        showParams: true,
+      },
+    );
 
-    rules[
-      pagePath`${ERootRoutes.Main}${ETabRoutes.Developer}${ETabDeveloperRoutes.DevHomeStack2}`
-    ] = {
-      showUrl: true,
-      showParams: true,
-    };
+    addRule(
+      [
+        ERootRoutes.Main,
+        ETabRoutes.Developer,
+        ETabDeveloperRoutes.DevHomeStack2,
+      ],
+      {
+        showUrl: true,
+        showParams: true,
+      },
+    );
 
-    rules[
-      pagePath`${ERootRoutes.Modal}${EModalRoutes.TestModal}${ETestModalPages.TestSimpleModal}`
-    ] = {
-      showUrl: true,
-      showParams: true,
-    };
+    addRule(
+      [ERootRoutes.Modal, EModalRoutes.TestModal, ETestModalPages.TestSimpleModal],
+      {
+        showUrl: true,
+        showParams: true,
+      },
+    );
   }
 
   return rules;
