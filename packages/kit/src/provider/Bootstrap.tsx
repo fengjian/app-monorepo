@@ -112,6 +112,12 @@ const useDesktopEvents = platformEnv.isDesktop
       const openSettingsRef = useRef(openSettings);
       openSettingsRef.current = openSettings;
 
+      const onCheckUpdate = useCallback(() => {
+        void backgroundApiProxy.serviceAppUpdate.fetchAppUpdateInfo(true);
+      }, []);
+      const onCheckUpdateRef = useRef(onCheckUpdate);
+      onCheckUpdateRef.current = onCheckUpdate;
+
       const ensureModalClosedAndNavigate = useCallback(
         (navigateAction?: () => void) => {
           function getAllModalRoutes() {

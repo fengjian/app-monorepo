@@ -783,8 +783,6 @@ export const useSettingsConfig: () => ISettingsConfig = () => {
       biometricAuthInfo.title,
       biometricAuthInfo.icon,
       settings.hardwareTransportType,
-      isShowAppUpdateUI,
-      appUpdateInfo.isNeedUpdate,
       devSettings.enabled,
       isKeylessWalletExistsLocal,
       startBackup,

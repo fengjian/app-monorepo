@@ -17,14 +17,15 @@ export const isForceUpdateStrategy = (_updateStrategy: EUpdateStrategy) => false
 export const useAppChangeLog = () => useMemo(() => undefined, []);
 
 export const useDownloadPackage = () => {
-  const noopAsync = useCallback(async () => {}, []);
-  const noopAction = useCallback(() => {}, []);
+  const noopAsync = useCallback(async (..._args: unknown[]) => {}, []);
+  const noopAction = useCallback((..._args: unknown[]) => {}, []);
   return {
     installPackage: noopAsync,
     downloadPackage: noopAsync,
     verifyPackage: noopAsync,
     verifyASC: noopAsync,
     downloadASC: noopAsync,
+    manualInstallPackage: noopAction,
     showSilentUpdateDialog: noopAction,
     showUpdateInCompleteDialog: noopAction,
   };
@@ -52,7 +53,7 @@ export const useAppUpdateInfo = (_isFullModal = false, _autoCheck = true) => {
       toUpdatePreviewPage: noopAction,
       onViewReleaseInfo: noopAction,
       checkForUpdates: noopAsync,
-      title: formatMessage({ id: ETranslations.update_update_app }),
+      title: formatMessage({ id: ETranslations.update_update_now }),
     }),
     [data, formatMessage, noopAction, noopAsync],
   );

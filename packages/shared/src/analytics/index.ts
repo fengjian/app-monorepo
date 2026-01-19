@@ -100,8 +100,9 @@ export class Analytics {
     void eventName;
     void eventProps;
     return;
-    if (eventProps?.pageName) {
-      this.basicInfo.pageName = eventProps.pageName;
+    const pageName = eventProps?.pageName;
+    if (pageName) {
+      this.basicInfo.pageName = pageName;
     }
     if (this.instanceId && this.baseURL) {
       if (platformEnv.isWebEmbed) {

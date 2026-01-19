@@ -68,7 +68,6 @@ export function Footer() {
           key={item.id}
           label={intl.formatMessage({ id: item.translationKey })}
           href={item.href}
-          onPress={item.onPress}
         />
       )),
     [intl],
