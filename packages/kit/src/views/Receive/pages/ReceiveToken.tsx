@@ -47,18 +47,13 @@ import { EConfirmOnDeviceType } from '@onekeyhq/shared/types/device';
 
 import backgroundApiProxy from '../../../background/instance/backgroundApiProxy';
 import AddressTypeSelector from '../../../components/AddressTypeSelector/AddressTypeSelector';
-import {
-  FormatHyperlinkText,
-  HyperlinkText,
-} from '../../../components/HyperlinkText';
-import { NetworkAvatar } from '../../../components/NetworkAvatar';
+import { HyperlinkText } from '../../../components/HyperlinkText';
 import { Token } from '../../../components/Token';
 import { useAccountData } from '../../../hooks/useAccountData';
 import useAppNavigation from '../../../hooks/useAppNavigation';
 import { useCopyAddressWithDeriveType } from '../../../hooks/useCopyAccountAddress';
 import { useHelpLink } from '../../../hooks/useHelpLink';
 import { usePromiseResult } from '../../../hooks/usePromiseResult';
-import { useWalletBanner } from '../../../hooks/useWalletBanner';
 import { EAddressState } from '../types';
 
 import type { RouteProp } from '@react-navigation/core';
@@ -101,12 +96,6 @@ function ReceiveToken() {
     });
   }, [accountId, networkId]);
 
-  const { handleBannerOnPress } = useWalletBanner({
-    account,
-    network,
-    wallet,
-  });
-
   const [currentDeriveType, setCurrentDeriveType] = useState<
     IAccountDeriveTypes | undefined
   >(deriveType);
@@ -142,16 +131,6 @@ function ReceiveToken() {
 
   const requestsUrl = useHelpLink({ path: 'requests/new' });
 
-  const { result: banner } = usePromiseResult(async () => {
-    const banners =
-      await backgroundApiProxy.serviceWalletBanner.fetchWalletBanner({
-        accountId,
-      });
-    return banners.find(
-      (_banner) =>
-        _banner.position === 'receive' && _banner.networkId === networkId,
-    );
-  }, [accountId, networkId]);
 
   const isHardwareWallet =
     accountUtils.isQrWallet({
@@ -828,9 +807,6 @@ function ReceiveToken() {
     nativeToken?.logoURI,
   ]);
 
-  const isPressable = useMemo(() => {
-    return !!(banner?.href || banner?.mode);
-  }, [banner?.href, banner?.mode]);
   return (
     <Page safeAreaEnabled={false}>
       <Page.Header
@@ -838,54 +814,6 @@ function ReceiveToken() {
       />
       <Page.Body flex={1} pb="$5" px="$5">
         {renderReceiveQrCode()}
-        <YStack gap="$2">
-          {banner && shouldShowQRCode && !isBtcUsedAddressVerifyMode ? (
-            <XStack
-              py="$2.5"
-              px="$3"
-              gap="$3"
-              borderWidth={StyleSheet.hairlineWidth}
-              borderColor={
-                networkLogoColor ? `${networkLogoColor}2A` : '$borderSubdued'
-              }
-              bg={networkLogoColor ? `${networkLogoColor}0D` : '$bgSubdued'}
-              borderRadius="$2"
-              borderCurve="continuous"
-              userSelect="none"
-              {...(isPressable
-                ? {
-                    focusable: true,
-                    focusVisibleStyle: {
-                      outlineColor: '$focusRing',
-                      outlineWidth: 2,
-                      outlineStyle: 'solid',
-                      outlineOffset: 0,
-                    },
-                    hoverStyle: {
-                      bg: networkLogoColor
-                        ? `${networkLogoColor}1A`
-                        : '$bgHover',
-                    },
-                    pressStyle: {
-                      bg: networkLogoColor
-                        ? `${networkLogoColor}2A`
-                        : '$bgActive',
-                    },
-                    onPress: () => handleBannerOnPress(banner),
-                  }
-                : undefined)}
-            >
-              <Image
-                size="$5"
-                source={{ uri: banner.src }}
-                fallback={<NetworkAvatar size="$5" networkId={networkId} />}
-              />
-              <FormatHyperlinkText size="$bodyMd" flex={1}>
-                {banner.title}
-              </FormatHyperlinkText>
-            </XStack>
-          ) : null}
-        </YStack>
       </Page.Body>
       <Page.Footer>{renderReceiveFooter()}</Page.Footer>
     </Page>
