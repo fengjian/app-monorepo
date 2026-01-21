@@ -9,7 +9,6 @@ import { HomeTokenListProviderMirror } from '../components/HomeTokenListProvider
 import ReferralCodeBlock from '../components/NotBakcedUp/ReferralCodeBlock';
 import { ReceiveInfo } from '../components/ReceiveInfo';
 import { WalletActions } from '../components/WalletActions';
-import WalletBanner from '../components/WalletBanner';
 
 import { HomeOverviewContainer } from './HomeOverviewContainer';
 
@@ -98,7 +97,6 @@ function BaseHomeHeaderContainer() {
           />
         )}
       </Stack>
-      {isWalletNotBackedUp ? null : <WalletBanner />}
       {renderWalletInitBlock()}
     </HomeTokenListProviderMirror>
   );
