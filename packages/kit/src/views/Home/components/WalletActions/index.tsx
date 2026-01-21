@@ -251,12 +251,7 @@ function WalletActions({ ...rest }: IXStackProps) {
           />
         );
       case 'swap':
-        return platformEnv.isExtensionUiPopup ||
-          platformEnv.isExtensionUiSidePanel ? (
-          <WalletActionPerp key="perp" customization={customization} />
-        ) : (
-          <WalletActionSwap key="swap" customization={customization} />
-        );
+        return <WalletActionSwap key="swap" customization={customization} />;
       case 'perp':
         return <WalletActionPerp key="perp" customization={customization} />;
       case 'staking':
