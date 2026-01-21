@@ -27,7 +27,6 @@ import { EHomeTab } from '@onekeyhq/shared/types';
 
 import InfoBlock from './InfoBlock';
 import MainInfoBlock from './MainBlock';
-import ReferralCodeBlock from './ReferralCodeBlock';
 
 function NotBackedUp() {
   const intl = useIntl();
@@ -152,7 +151,6 @@ function NotBackedUp() {
             actions={renderBackupWalletActions()}
           />
         </Theme>
-        <ReferralCodeBlock closable />
       </YStack>
       <YStack
         gap="$5"
