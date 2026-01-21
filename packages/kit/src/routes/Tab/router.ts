@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { getTokenValue, useMedia } from '@onekeyhq/components';
+import { getTokenValue } from '@onekeyhq/components';
 import type {
   ITabNavigatorConfig,
   ITabNavigatorExtraConfig,
@@ -49,18 +49,14 @@ const getDiscoverRouterConfig = (
 };
 
 export const useTabRouterConfig = (params?: IGetTabRouterParams) => {
-  const { md } = useMedia();
-
   const { isModalStack } = useDeviceManagerModalStyle();
   const isShowDesktopDiscover = useIsShowDesktopDiscover();
   const isWebDappMode = platformEnv.isWebDappMode;
+  const isExtensionCompactMode =
+    platformEnv.isExtensionUiPopup || platformEnv.isExtensionUiSidePanel;
   const isShowMDDiscover = useMemo(
-    () =>
-      !isShowDesktopDiscover &&
-      !platformEnv.isWebDappMode &&
-      !platformEnv.isExtensionUiPopup &&
-      !(platformEnv.isExtensionUiSidePanel && md),
-    [isShowDesktopDiscover, md],
+    () => !isShowDesktopDiscover && !platformEnv.isWebDappMode,
+    [isShowDesktopDiscover],
   );
 
   const isGtMdNonNative = useIsGtMdNonNative();
@@ -90,28 +86,32 @@ export const useTabRouterConfig = (params?: IGetTabRouterParams) => {
         trackId: 'global-wallet',
         hiddenIcon: isWebDappMode,
       },
-      {
-        name: ETabRoutes.DeviceManagement,
-        tabBarIcon: () => 'OnekeyDeviceCustom',
-        translationId: ETranslations.global_device,
-        freezeOnBlur: Boolean(params?.freezeOnBlur),
-        exact: true,
-        children: deviceManagementRouters,
-        trackId: 'global-my-onekey',
-        hideOnTabBar: isModalStack,
-      },
+      isExtensionCompactMode
+        ? undefined
+        : {
+            name: ETabRoutes.DeviceManagement,
+            tabBarIcon: () => 'OnekeyDeviceCustom',
+            translationId: ETranslations.global_device,
+            freezeOnBlur: Boolean(params?.freezeOnBlur),
+            exact: true,
+            children: deviceManagementRouters,
+            trackId: 'global-my-onekey',
+            hideOnTabBar: isModalStack,
+          },
       discoverTabConfig,
-      {
-        name: ETabRoutes.Settings,
-        tabBarIcon: (focused?: boolean) =>
-          focused ? 'SettingsSolid' : 'SettingsOutline',
-        translationId: ETranslations.settings_settings,
-        freezeOnBlur: Boolean(params?.freezeOnBlur),
-        rewrite: '/settings',
-        exact: true,
-        children: settingRouters,
-        trackId: 'global-settings',
-      },
+      isExtensionCompactMode
+        ? undefined
+        : {
+            name: ETabRoutes.Settings,
+            tabBarIcon: (focused?: boolean) =>
+              focused ? 'SettingsSolid' : 'SettingsOutline',
+            translationId: ETranslations.settings_settings,
+            freezeOnBlur: Boolean(params?.freezeOnBlur),
+            rewrite: '/settings',
+            exact: true,
+            children: settingRouters,
+            trackId: 'global-settings',
+          },
       {
         name: ETabRoutes.Earn,
         tabBarIcon: (focused?: boolean) =>
