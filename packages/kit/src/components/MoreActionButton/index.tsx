@@ -18,7 +18,6 @@ import {
   Icon,
   IconButton,
   Image,
-  LottieView,
   NavBackButton,
   Popover,
   ScrollView,
@@ -33,8 +32,6 @@ import {
   useMedia,
   usePopoverContext,
 } from '@onekeyhq/components';
-import GiftExpandOnDark from '@onekeyhq/kit/assets/animations/gift-expand-on-dark.json';
-import GiftExpandOnLight from '@onekeyhq/kit/assets/animations/gift-expand-on-light.json';
 import useAppNavigation from '@onekeyhq/kit/src/hooks/useAppNavigation';
 import { useShowAddressBook } from '@onekeyhq/kit/src/hooks/useShowAddressBook';
 import { useActiveAccount } from '@onekeyhq/kit/src/states/jotai/contexts/accountSelector';
@@ -60,7 +57,6 @@ import {
   ERootRoutes,
 } from '@onekeyhq/shared/src/routes';
 import { EModalBulkCopyAddressesRoutes } from '@onekeyhq/shared/src/routes/bulkCopyAddresses';
-import { EPrimePages } from '@onekeyhq/shared/src/routes/prime';
 import deviceUtils from '@onekeyhq/shared/src/utils/deviceUtils';
 import extUtils from '@onekeyhq/shared/src/utils/extUtils';
 import networkUtils from '@onekeyhq/shared/src/utils/networkUtils';
@@ -70,8 +66,6 @@ import type { IHwQrWalletWithDevice } from '@onekeyhq/shared/types/account';
 import backgroundApiProxy from '../../background/instance/backgroundApiProxy';
 import { useOnLock } from '../../hooks/useOnLock';
 import { usePromiseResult } from '../../hooks/usePromiseResult';
-import { useReferFriends } from '../../hooks/useReferFriends';
-import { useThemeVariant } from '../../hooks/useThemeVariant';
 import { useDeviceManagerNavigation } from '../../views/DeviceManagement/hooks/useDeviceManagerNavigation';
 import { HomeFirmwareUpdateReminder } from '../../views/FirmwareUpdate/components/HomeFirmwareUpdateReminder';
 import { WalletXfpStatusReminder } from '../../views/Home/components/WalletXfpStatusReminder/WalletXfpStatusReminder';
@@ -352,7 +346,6 @@ interface IMoreActionContentGridItemProps {
   showRedDot?: boolean;
   showBadges?: boolean;
   badges?: number;
-  lottieSrc?: any;
   isPrimeFeature?: boolean;
 }
 
@@ -365,7 +358,6 @@ function MoreActionContentGridItem({
   showRedDot,
   showBadges,
   badges = 0,
-  lottieSrc,
   isPrimeFeature,
 }: IMoreActionContentGridItemProps) {
   const { closePopover } = usePopoverContext();
@@ -382,8 +374,6 @@ function MoreActionContentGridItem({
     });
     onPress();
   }, [closePopover, onPress, trackID]);
-
-  const themeVariant = useThemeVariant();
 
   if (isPrimeFeature && !isPrimeAvailable) {
     return null;
@@ -410,11 +400,6 @@ function MoreActionContentGridItem({
     >
       <YStack>
         {icon ? <Icon size="$6" color="$icon" name={icon} /> : null}
-        {lottieSrc ? (
-          <Stack w="$6" h="$6" ai="center" jc="center">
-            <LottieView width={32} height={32} source={lottieSrc} />
-          </Stack>
-        ) : null}
         {showRedDot ? (
           <Stack
             position="absolute"
@@ -655,15 +640,6 @@ function MoreActionGeneralGrid() {
     });
   }, [scanQrCode, account, network, allTokens.tokens, allTokens.keys, map]);
 
-  const handlePrime = useCallback(() => {
-    navigation.pushFullModal(EModalRoutes.PrimeModal, {
-      screen: EPrimePages.PrimeDashboard,
-      params: {
-        networkId: network?.id,
-      },
-    });
-  }, [navigation, network?.id]);
-
   const items = useMemo(() => {
     return [
       {
@@ -674,14 +650,6 @@ function MoreActionGeneralGrid() {
       },
       !platformEnv.isWebDappMode
         ? {
-            title: 'Prime',
-            icon: 'PrimeOutline' as const,
-            onPress: handlePrime,
-            trackID: 'wallet-prime',
-          }
-        : undefined,
-      !platformEnv.isWebDappMode
-        ? {
             title: intl.formatMessage({ id: ETranslations.settings_lock_now }),
             icon: 'LockOutline' as const,
             onPress: handleLock,
@@ -689,7 +657,7 @@ function MoreActionGeneralGrid() {
           }
         : undefined,
     ].filter(Boolean);
-  }, [handleLock, handlePrime, handleScan, intl]);
+  }, [handleLock, handleScan, intl]);
   return (
     <BaseMoreActionGrid
       title={intl.formatMessage({ id: ETranslations.global_general })}
@@ -831,32 +799,6 @@ const MoreActionWalletGrid = () => {
   );
 };
 
-const MoreActionMoreGrid = () => {
-  const intl = useIntl();
-  const themeVariant = useThemeVariant();
-  const { toReferFriendsPage } = useReferFriends();
-  const handleReferFriends = useCallback(() => {
-    void toReferFriendsPage();
-  }, [toReferFriendsPage]);
-
-  const items = useMemo(() => {
-    return [
-      {
-        title: intl.formatMessage({ id: ETranslations.sidebar_refer_a_friend }),
-        lottieSrc:
-          themeVariant === 'light' ? GiftExpandOnLight : GiftExpandOnDark,
-        testID: 'referral' as const,
-        onPress: handleReferFriends,
-      },
-    ];
-  }, [intl, themeVariant, handleReferFriends]);
-  return (
-    <BaseMoreActionGrid
-      title={intl.formatMessage({ id: ETranslations.global_more })}
-      items={items}
-    />
-  );
-};
 
 function MoreActionDevice() {
   const intl = useIntl();
@@ -994,7 +936,6 @@ function BaseMoreActionContent() {
         <MoreActionDivider />
         <MoreActionWalletGrid />
         <MoreActionDivider />
-        <MoreActionMoreGrid />
       </ScrollView>
       <MoreActionContentFooter />
     </YStack>
@@ -1029,7 +970,6 @@ function MoreActionContent({
         <MoreActionDivider />
         <MoreActionWalletGrid />
         <MoreActionDivider />
-        <MoreActionMoreGrid />
         <YStack flex={1} />
         <MoreActionContentFooter />
       </YStack>
