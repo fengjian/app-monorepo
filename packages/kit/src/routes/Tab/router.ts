@@ -17,7 +17,6 @@ import { deviceManagementRouters } from './DeviceManagement/router';
 import { discoveryRouters } from './Discovery/router';
 import { earnRouters } from './Earn/router';
 import { multiTabBrowserRouters } from './MultiTabBrowser/router';
-import { referFriendsRouters } from './ReferFriends/router';
 import { settingRouters } from './Setting/router';
 
 type IGetTabRouterParams = {
@@ -77,19 +76,6 @@ export const useTabRouterConfig = (params?: IGetTabRouterParams) => {
     return undefined;
   }, [isShowDesktopDiscover, isShowMDDiscover, params]);
 
-  const referFriendsTabConfig = useMemo(() => {
-    return {
-      name: ETabRoutes.ReferFriends,
-      tabBarIcon: () => 'GiftOutline',
-      translationId: ETranslations.sidebar_refer_a_friend,
-      rewrite: '/refer-friends',
-      exact: true,
-      children: referFriendsRouters,
-      trackId: 'global-referral',
-      freezeOnBlur: Boolean(params?.freezeOnBlur),
-    };
-  }, [params?.freezeOnBlur]);
-
   return useMemo(() => {
     const tabs = [
       {
@@ -126,21 +112,12 @@ export const useTabRouterConfig = (params?: IGetTabRouterParams) => {
         children: settingRouters,
         trackId: 'global-settings',
       },
-      !platformEnv.isNative && isWebDappMode ? referFriendsTabConfig : undefined,
-      !platformEnv.isNative && !isWebDappMode
-        ? {
-            ...referFriendsTabConfig,
-            inMoreAction: true,
-            hideOnTabBar: !isGtMdNonNative,
-          }
-        : undefined,
       {
         name: ETabRoutes.Earn,
         tabBarIcon: (focused?: boolean) =>
           focused ? 'CoinsSolid' : 'CoinsOutline',
         translationId: ETranslations.global_earn,
         freezeOnBlur: Boolean(params?.freezeOnBlur),
-        inMoreAction: true,
         rewrite: '/defi',
         exact: true,
         children: earnRouters,
@@ -167,7 +144,6 @@ export const useTabRouterConfig = (params?: IGetTabRouterParams) => {
   }, [
     params,
     isWebDappMode,
-    referFriendsTabConfig,
     isGtMdNonNative,
     isModalStack,
     discoverTabConfig,
