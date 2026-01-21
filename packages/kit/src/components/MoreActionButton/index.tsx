@@ -445,7 +445,7 @@ function MoreActionContentGridItem({
             position="absolute"
             right={-10}
             top={-4}
-            backgroundColor={themeVariant === 'light' ? '#F1F1F1' : '#3A3A3A'}
+            backgroundColor="$bgSubdued"
             px="$1"
             borderRadius="$full"
             borderWidth="$px"
