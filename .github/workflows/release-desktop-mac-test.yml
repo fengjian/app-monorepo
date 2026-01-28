@@ -1,0 +1,78 @@
+name: release-desktop-mac-test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release-desktop-mac-test:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        node-version: [24.x]
+
+    steps:
+      - name: Show executed time
+        run: |
+          echo "Executed at: $(date '+%Y-%m-%d %H:%M:%S')"
+
+      - name: Checkout Source Code
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          registry-url: 'https://npm.pkg.github.com'
+          always-auth: true
+          scope: '@onekeyhq'
+
+      - name: Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: echo "dir=${{ github.workspace }}/.yarn" >> "$GITHUB_OUTPUT"
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        id: yarn-cache
+        with:
+          path: |
+            ${{ steps.yarn-cache-dir-path.outputs.dir }}
+            **/node_modules
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock', '**/patches/**') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock', '**/patches/**') }}
+
+      - name: Install Dep
+        if: steps.yarn-cache.outputs.cache-hit != 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_OPTIONS: '--max_old_space_size=8192'
+        run: |
+          yarn
+
+      - name: Run postinstall only (cache hit)
+        if: steps.yarn-cache.outputs.cache-hit == 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_OPTIONS: '--max_old_space_size=8192'
+        run: |
+          yarn postinstall
+
+      - name: Build mac dmg (no signing)
+        env:
+          NODE_OPTIONS: '--max_old_space_size=8192'
+        run: |
+          cd apps/desktop
+          yarn clean:build
+          yarn build:renderer
+          yarn build:main
+          yarn install-app-deps
+          yarn electron-builder build -m --config electron-builder-mac-test.config.js --publish never
+
+      - name: Upload Artifacts mac dmg
+        uses: actions/upload-artifact@v4
+        with:
+          name: onekey-desktop-mac-test-${{ github.sha }}
+          path: |
+            ./apps/desktop/build-electron/**/*.dmg
